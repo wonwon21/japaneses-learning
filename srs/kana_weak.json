@@ -1,5 +1,12 @@
 {
-  "weak_kana": [],
+  "weak_kana": [
+    {
+      "char": "ろ",
+      "confused_with": [],
+      "miss_count": 1,
+      "last_missed": "2026-06-21"
+    }
+  ],
   "schema_version": "1.0",
   "_comment": "헷갈리는 가나 추적. 스키마 예: {\"char\": \"ね\", \"confused_with\": [\"れ\", \"わ\"], \"miss_count\": 3, \"last_missed\": \"2026-05-27\"}"
 }
