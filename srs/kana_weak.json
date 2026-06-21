@@ -5,6 +5,12 @@
       "confused_with": [],
       "miss_count": 1,
       "last_missed": "2026-06-21"
+    },
+    {
+      "char": "る",
+      "confused_with": [],
+      "miss_count": 1,
+      "last_missed": "2026-06-21"
     }
   ],
   "schema_version": "1.0",
