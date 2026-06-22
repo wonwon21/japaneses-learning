@@ -77,6 +77,12 @@
       "confused_with": [],
       "miss_count": 1,
       "last_missed": "2026-06-22"
+    },
+    {
+      "char": "ヒ",
+      "confused_with": [],
+      "miss_count": 1,
+      "last_missed": "2026-06-22"
     }
   ],
   "schema_version": "1.0",
