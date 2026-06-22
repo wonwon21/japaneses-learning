@@ -139,7 +139,7 @@ const S = {
   lessonFiles: null,
   refFiles: null,
   // review session
-  rq: [], ri: 0, rResults: [], rFlipped: false, rMode: 'all',
+  rq: [], ri: 0, rResults: [], rFlipped: false, rMode: 'all', rAll: false,
   // kana session
   kq: [], ki: 0, kFlipped: false,
   // detail views
@@ -168,6 +168,8 @@ async function render() {
     bindSettings();
     return;
   }
+
+  if (r === '/review') S.rAll = false; // nav-triggered reset; quiz buttons set rAll before calling reviewPage() directly
 
   paint('<div class="loading">로딩 중...</div>');
 
@@ -289,8 +291,9 @@ async function reviewPage() {
   const [vocab, grammar] = await Promise.all([loadVocab(), loadGrammar()]);
 
   // Always rebuild queue on page entry
-  const dv = vocab.cards.filter(isDue).map(c => Object.assign({}, c, { _type: 'vocab' }));
-  const dg = grammar.cards.filter(isDue).map(c => Object.assign({}, c, { _type: 'grammar' }));
+  const filterFn = S.rAll ? () => true : isDue;
+  const dv = vocab.cards.filter(filterFn).map(c => Object.assign({}, c, { _type: 'vocab' }));
+  const dg = grammar.cards.filter(filterFn).map(c => Object.assign({}, c, { _type: 'grammar' }));
   const allCards = S.rMode === 'vocab'   ? dv
                  : S.rMode === 'grammar' ? dg
                  : [...dv, ...dg].sort(() => Math.random() - 0.5);
@@ -298,12 +301,14 @@ async function reviewPage() {
   S.ri = 0; S.rResults = []; S.rFlipped = false;
 
   if (S.rq.length === 0) {
+    const msg = S.rAll ? '카드가 없습니다.' : '오늘 복습할 카드 없어요!';
+    const sub = S.rAll ? '' : '내일 또 만나요.';
     return `
 <h1 class="page-title">🃏 SRS 복습</h1>
 <div class="completion">
   <div class="completion-emoji">🎉</div>
-  <div class="completion-title">오늘 복습할 카드 없어요!</div>
-  <div class="completion-sub">내일 또 만나요.</div>
+  <div class="completion-title">${msg}</div>
+  ${sub ? `<div class="completion-sub">${sub}</div>` : ''}
   <button class="btn btn-primary" onclick="go('/')">홈으로</button>
 </div>`;
   }
@@ -460,8 +465,13 @@ ${S.kFlipped ? `
 // ── Vocab ─────────────────────────────────────────────────────────────────
 async function vocabPage() {
   await loadVocab();
+  const due = S.vocab.cards.filter(isDue).length;
   return `
 <h1 class="page-title">📖 단어장</h1>
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <button class="btn btn-primary" id="vocab-quiz-all-btn">🃏 전체 단어 퀴즈 (${S.vocab.cards.length}개)</button>
+  ${due > 0 ? `<button class="btn btn-secondary" id="vocab-quiz-due-btn">📬 복습 대기만 (${due}개)</button>` : ''}
+</div>
 <input class="search-bar" id="vsearch" placeholder="검색 (한국어, 일본어)…" autocomplete="off">
 <div id="vtable">${vocabTableHtml(S.vocab.cards)}</div>`;
 }
@@ -893,8 +903,22 @@ async function answerKana(correct) {
   bindKana();
 }
 
-// Vocab search
+// Vocab search + quiz buttons
 function bindVocab() {
+  on('vocab-quiz-all-btn', 'click', async () => {
+    S.rMode = 'vocab'; S.rAll = true;
+    paint('<div class="loading">로딩 중...</div>');
+    paint(await reviewPage());
+    bindReview();
+  });
+
+  on('vocab-quiz-due-btn', 'click', async () => {
+    S.rMode = 'vocab'; S.rAll = false;
+    paint('<div class="loading">로딩 중...</div>');
+    paint(await reviewPage());
+    bindReview();
+  });
+
   const inp = document.getElementById('vsearch');
   if (!inp) return;
   inp.addEventListener('input', () => {
@@ -937,7 +961,7 @@ function bindLessons() {
 // Grammar quiz button
 function bindGrammar() {
   on('grammar-quiz-btn', 'click', async () => {
-    S.rMode = 'grammar';
+    S.rMode = 'grammar'; S.rAll = true;
     paint('<div class="loading">로딩 중...</div>');
     paint(await reviewPage());
     bindReview();
